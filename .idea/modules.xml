@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/potpissers-velocity1.iml" filepath="$PROJECT_DIR$/potpissers-velocity1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.memeasaur.Potpissers.iml" filepath="$PROJECT_DIR$/.idea/modules/com.memeasaur.Potpissers.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.memeasaur.Potpissers.main~3.iml" filepath="$PROJECT_DIR$/.idea/modules/com.memeasaur.Potpissers.main~3.iml" />
+      <module fileurl="file://$PROJECT_DIR$/potpissers-velocity.iml" filepath="$PROJECT_DIR$/potpissers-velocity.iml" />
     </modules>
   </component>
 </project>

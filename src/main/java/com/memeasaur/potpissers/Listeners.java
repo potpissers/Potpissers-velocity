@@ -37,7 +37,7 @@ public class Listeners {
     public static final HikariDataSource POSTGRESQL_POOL;
     static {
         try {
-            Class.forName("org.postgresql.Driver"); // I'm not supposed to need this, but I do. probably because paper includes sqlite etc
+            Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

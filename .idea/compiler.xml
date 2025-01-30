@@ -6,8 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="potpissers-velocity1" />
+        <module name="potpissers-velocity" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="com.memeasaur.Potpissers" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>

@@ -17,6 +17,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import net.kyori.adventure.text.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -142,7 +143,7 @@ public class Listeners {
     }
     @Subscribe
     public void onPlayerDisconnect(DisconnectEvent e) {
-        try (PreparedStatement preparedStatement = POSTGRESQL_POOL.getConnection().prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?)")) {
+        try (Connection connection = POSTGRESQL_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?)")) {
             preparedStatement.setObject(1, e.getPlayer().getUniqueId());
         } catch (SQLException ex) {
             throw new RuntimeException(ex);

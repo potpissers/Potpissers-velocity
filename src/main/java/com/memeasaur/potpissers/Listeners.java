@@ -79,7 +79,7 @@ public class Listeners {
 
         SimpleCommand commands = new Commands();
         CommandManager commandManager = proxy.getCommandManager();
-        for (String commandName : List.of("hub", "cubecore", "kollusion", "mcsg", "soup", "mz", "minez", "hcfactions"))
+        for (String commandName : List.of("hub", "cubecore", "kollusion", "mcsg", "soup", "mz", "minez", "hcfactions", "hcf"))
             commandManager.register(commandManager.metaBuilder(commandName).plugin(this).build(), commands);
 
 //        simpleCommand = new MineZCommand();
@@ -143,10 +143,13 @@ public class Listeners {
     }
     @Subscribe
     public void onPlayerDisconnect(DisconnectEvent e) {
-        try (Connection connection = POSTGRESQL_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?)")) {
-            preparedStatement.setObject(1, e.getPlayer().getUniqueId());
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-        }
+        proxy.getScheduler().buildTask(this, () -> {
+            try (Connection connection = POSTGRESQL_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?)")) {
+                preparedStatement.setObject(1, e.getPlayer().getUniqueId());
+                preparedStatement.execute();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }).schedule();
     }
 }

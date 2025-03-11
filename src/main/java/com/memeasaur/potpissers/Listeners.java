@@ -81,13 +81,6 @@ public class Listeners {
         CommandManager commandManager = proxy.getCommandManager();
         for (String commandName : List.of("hub", "cubecore", "kollusion", "mcsg", "soup", "mz", "minez", "hcfactions", "hcf"))
             commandManager.register(commandManager.metaBuilder(commandName).plugin(this).build(), commands);
-
-//        simpleCommand = new MineZCommand();
-//        commandMeta = commandManager.metaBuilder("mz")
-//                .aliases("minez")
-//                .plugin(this)
-//                .build();
-//        commandManager.register(commandMeta, simpleCommand);
     }
 
     @Subscribe

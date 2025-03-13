@@ -5,10 +5,11 @@ import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
-import com.velocitypowered.api.event.player.ServerPreConnectEvent;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
@@ -17,12 +18,18 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import net.kyori.adventure.text.Component;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Plugin(
     id = "potpissers",
@@ -31,6 +38,7 @@ import java.util.Set;
 )
 public class Listeners {
     public static ProxyServer proxy;
+    public static final ConcurrentHashMap<Player, OffsetDateTime> newPlayers = new ConcurrentHashMap<>();
     @Inject
     public Listeners(ProxyServer proxy) {
         Listeners.proxy = proxy;
@@ -134,26 +142,48 @@ public class Listeners {
         }
     }
     @Subscribe
-    public void onPlayerConnect(ServerPreConnectEvent e) {
-        System.out.println("foo");
-//        proxy.getScheduler().buildTask(this, () -> {
-//            try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?) ON CONFLICT DO NOTHING")) {
-//                preparedStatement.setObject(1, e.getPlayer().getUniqueId());
-//                preparedStatement.execute();
-//            } catch (SQLException ex) {
-//                throw new RuntimeException(ex);
-//            }
-//        }).schedule();
+    public void onPlayerConnect(ServerPostConnectEvent e) {
+        proxy.getScheduler().buildTask(this, () -> {
+            try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(RETURN_USER_REFERRAL_STAR)) {
+                preparedStatement.setObject(1, e.getPlayer().getUniqueId());
+                try (ResultSet resultSet = preparedStatement.getResultSet()) {
+                    if (!resultSet.next() && e.getPlayer() != null)
+                        newPlayers.put(e.getPlayer(), OffsetDateTime.now());
+                }
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }).schedule();
     }
+    public static final String RETURN_USER_REFERRAL_STAR = """
+            SELECT *
+            FROM user_referrals
+            WHERE user_uuid = ?""";
     @Subscribe
     public void onPlayerDisconnect(DisconnectEvent e) {
-//        proxy.getScheduler().buildTask(this, () -> {
-//            try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?) ON CONFLICT DO NOTHING")) {
-//                preparedStatement.setObject(1, e.getPlayer().getUniqueId());
-//                preparedStatement.execute();
-//            } catch (SQLException ex) {
-//                throw new RuntimeException(ex);
-//            }
-//        }).schedule();
+        if (newPlayers.containsKey(e.getPlayer()))
+            proxy.getScheduler().buildTask(this, () -> {
+                try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(UPSERT_USER_REFERRAL)) {
+                    Player player = e.getPlayer();
+                    preparedStatement.setObject(1, player.getUniqueId());
+                    preparedStatement.setObject(2, newPlayers.get(player));
+                    preparedStatement.execute();
+                    newPlayers.remove(player);
+
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri()
+                            .header()
+                            .header()
+                            .build();
+
+                    HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()?);
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }).schedule();
     }
+    public static final String UPSERT_USER_REFERRAL = """
+            INSERT INTO user_referrals (user_uuid, timestamp)
+            VALUES (?, ?)
+            ON CONFLICT (user_uuid) DO UPDATE SET timestamp = EXCLUDED.timestamp""";
 }

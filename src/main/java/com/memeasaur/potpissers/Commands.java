@@ -52,7 +52,7 @@ public class Commands implements SimpleCommand {
                     }
                 }
                 case "mz", "minez" ->
-                        handleServerSwitchCommand("minez", p);
+                        handleServerSwitchCommand("mz", p);
                 case "mcsg" ->
                         handleServerSwitchCommand("mcsg", p);
                 case "soup" ->

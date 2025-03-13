@@ -5,6 +5,7 @@ import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
+import com.velocitypowered.api.event.player.ServerPreConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.plugin.Plugin;
@@ -35,7 +36,7 @@ public class Listeners {
         Listeners.proxy = proxy;
     }
 
-    public static final HikariDataSource POSTGRESQL_POOL;
+    public static final HikariDataSource PQ_POOL;
     static {
         try {
             Class.forName("org.postgresql.Driver");
@@ -45,10 +46,10 @@ public class Listeners {
 
         HikariConfig postgresConfig = new HikariConfig();
         postgresConfig.setJdbcUrl(System.getenv("POSTGRES_JDBC_URL"));
-        POSTGRESQL_POOL = new HikariDataSource(postgresConfig);
+        PQ_POOL = new HikariDataSource(postgresConfig);
     }
 
-    public static final Set<String> PRIVATE_CHAT_SERVERS = Set.of("hcf", "minez");
+    public static final Set<String> PRIVATE_CHAT_SERVERS = Set.of("hcf", "mz");
     public static final MinecraftChannelIdentifier SERVER_SWITCHER = MinecraftChannelIdentifier.create("potpissers", "serverswitcher");
     public static final MinecraftChannelIdentifier HCF_REVIVER = MinecraftChannelIdentifier.create("potpissers", "hcfreviver");
 
@@ -65,7 +66,7 @@ public class Listeners {
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
         proxy.getChannelRegistrar().register(SERVER_SWITCHER);
-        proxy.getChannelRegistrar().register(HCF_REVIVER);
+        proxy.getChannelRegistrar().register(HCF_REVIVER); // TODO -> move to server
 
         proxy.getChannelRegistrar().register(PLAYER_MESSAGER);
 
@@ -87,11 +88,9 @@ public class Listeners {
     public void onPluginMessage(PluginMessageEvent e) {
         if (e.getSource() instanceof ServerConnection serverConnection) {
             switch (e.getIdentifier().getId()) {
-                case "potpissers:serverswitcher" -> {
-                    String serverName = new String(e.getData(), StandardCharsets.UTF_8);
-                    proxy.getServer(serverName)
+                case "potpissers:serverswitcher" ->
+                    proxy.getServer(new String(e.getData(), StandardCharsets.UTF_8))
                             .ifPresent(registeredServer -> serverConnection.getPlayer().createConnectionRequest(registeredServer).fireAndForget());
-                }
                 case "potpissers:hcfreviver" -> {
                     // TODO -> this is more complicated than it should be
                     String[] parts = new String(e.getData(), StandardCharsets.UTF_8).split("\\|");
@@ -135,14 +134,26 @@ public class Listeners {
         }
     }
     @Subscribe
+    public void onPlayerConnect(ServerPreConnectEvent e) {
+        System.out.println("foo");
+//        proxy.getScheduler().buildTask(this, () -> {
+//            try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?) ON CONFLICT DO NOTHING")) {
+//                preparedStatement.setObject(1, e.getPlayer().getUniqueId());
+//                preparedStatement.execute();
+//            } catch (SQLException ex) {
+//                throw new RuntimeException(ex);
+//            }
+//        }).schedule();
+    }
+    @Subscribe
     public void onPlayerDisconnect(DisconnectEvent e) {
-        proxy.getScheduler().buildTask(this, () -> {
-            try (Connection connection = POSTGRESQL_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?)")) {
-                preparedStatement.setObject(1, e.getPlayer().getUniqueId());
-                preparedStatement.execute();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
-        }).schedule();
+//        proxy.getScheduler().buildTask(this, () -> {
+//            try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO user_referrals (user_uuid) VALUES (?) ON CONFLICT DO NOTHING")) {
+//                preparedStatement.setObject(1, e.getPlayer().getUniqueId());
+//                preparedStatement.execute();
+//            } catch (SQLException ex) {
+//                throw new RuntimeException(ex);
+//            }
+//        }).schedule();
     }
 }

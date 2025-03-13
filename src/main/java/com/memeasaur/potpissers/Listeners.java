@@ -18,9 +18,6 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import net.kyori.adventure.text.Component;
 
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,7 +25,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Plugin(
@@ -38,12 +34,10 @@ import java.util.concurrent.ConcurrentHashMap;
 )
 public class Listeners {
     public static ProxyServer proxy;
-    public static final ConcurrentHashMap<Player, OffsetDateTime> newPlayers = new ConcurrentHashMap<>();
     @Inject
     public Listeners(ProxyServer proxy) {
         Listeners.proxy = proxy;
     }
-
     public static final HikariDataSource PQ_POOL;
     static {
         try {
@@ -56,8 +50,9 @@ public class Listeners {
         postgresConfig.setJdbcUrl(System.getenv("POSTGRES_JDBC_URL"));
         PQ_POOL = new HikariDataSource(postgresConfig);
     }
+    public static final ConcurrentHashMap<Player, OffsetDateTime> newPlayers = new ConcurrentHashMap<>();
 
-    public static final Set<String> PRIVATE_CHAT_SERVERS = Set.of("hcf", "mz");
+//    public static final Set<String> PRIVATE_CHAT_SERVERS = Set.of("hcf", "mz"); // TODO ?
     public static final MinecraftChannelIdentifier SERVER_SWITCHER = MinecraftChannelIdentifier.create("potpissers", "serverswitcher");
     public static final MinecraftChannelIdentifier HCF_REVIVER = MinecraftChannelIdentifier.create("potpissers", "hcfreviver");
 
@@ -170,13 +165,13 @@ public class Listeners {
                     preparedStatement.execute();
                     newPlayers.remove(player);
 
-                    HttpRequest request = HttpRequest.newBuilder()
-                            .uri()
-                            .header()
-                            .header()
-                            .build();
-
-                    HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()?);
+//                    HttpRequest request = HttpRequest.newBuilder() // TODO
+//                            .uri()
+//                            .header()
+//                            .header()
+//                            .build();
+//
+//                    HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()?);
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
                 }

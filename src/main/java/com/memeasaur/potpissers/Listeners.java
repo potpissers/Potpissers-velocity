@@ -141,7 +141,7 @@ public class Listeners {
         proxy.getScheduler().buildTask(this, () -> {
             try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(RETURN_USER_REFERRAL_STAR)) {
                 preparedStatement.setObject(1, e.getPlayer().getUniqueId());
-                try (ResultSet resultSet = preparedStatement.getResultSet()) {
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (!resultSet.next() && e.getPlayer() != null)
                         newPlayers.put(e.getPlayer(), OffsetDateTime.now());
                 }

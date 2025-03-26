@@ -156,29 +156,23 @@ public class Listeners {
             WHERE user_uuid = ?""";
     @Subscribe
     public void onPlayerDisconnect(DisconnectEvent e) {
-        if (newPlayers.containsKey(e.getPlayer()))
-            proxy.getScheduler().buildTask(this, () -> {
-                try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(UPSERT_USER_REFERRAL)) {
-                    Player player = e.getPlayer();
-                    preparedStatement.setObject(1, player.getUniqueId());
-                    preparedStatement.setObject(2, newPlayers.get(player));
-                    preparedStatement.execute();
-                    newPlayers.remove(player);
-
-//                    HttpRequest request = HttpRequest.newBuilder() // TODO
-//                            .uri()
-//                            .header()
-//                            .header()
-//                            .build();
-//
-//                    HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()?);
-                } catch (SQLException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }).schedule();
+        Player player = e.getPlayer();
+        if (newPlayers.containsKey(player))
+            executeQuery("SELECT handle_upsert_user_referral(?, ?, ?)", new Object[]{player.getUniqueId(), newPlayers.get(player), player.getUsername()}, () -> newPlayers.remove(player));
+        executeQuery("SELECT handle_delete_online_player(?)", new Object[]{player.getUniqueId()}, null);
     }
-    public static final String UPSERT_USER_REFERRAL = """
-            INSERT INTO user_referrals (user_uuid, timestamp)
-            VALUES (?, ?)
-            ON CONFLICT (user_uuid) DO UPDATE SET timestamp = EXCLUDED.timestamp""";
+
+    public static void executeQuery(String query, Object[] params, Runnable optionalClosingLambda) {
+        proxy.getScheduler().buildTask(proxy, () -> {
+            try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                for (int i = 0; i < params.length; i++)
+                    preparedStatement.setObject(i + 1, params[i]);
+                preparedStatement.execute();
+                if (optionalClosingLambda != null)
+                    optionalClosingLambda.run();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }).schedule();
+    }
 }

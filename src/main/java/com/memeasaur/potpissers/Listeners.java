@@ -34,9 +34,11 @@ import java.util.concurrent.ConcurrentHashMap;
 )
 public class Listeners {
     public static ProxyServer proxy;
+    public static Listeners plugin;
     @Inject
     public Listeners(ProxyServer proxy) {
         Listeners.proxy = proxy;
+        Listeners.plugin = this;
     }
     public static final HikariDataSource PQ_POOL;
     static {
@@ -138,7 +140,7 @@ public class Listeners {
     }
     @Subscribe
     public void onPlayerConnect(ServerPostConnectEvent e) {
-        proxy.getScheduler().buildTask(this, () -> {
+        proxy.getScheduler().buildTask(plugin, () -> {
             try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(RETURN_USER_REFERRAL_STAR)) {
                 preparedStatement.setObject(1, e.getPlayer().getUniqueId());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -163,7 +165,7 @@ public class Listeners {
     }
 
     public static void executeQuery(String query, Object[] params, Runnable optionalClosingLambda) {
-        proxy.getScheduler().buildTask(proxy, () -> {
+        proxy.getScheduler().buildTask(plugin, () -> {
             try (Connection connection = PQ_POOL.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 for (int i = 0; i < params.length; i++)
                     preparedStatement.setObject(i + 1, params[i]);

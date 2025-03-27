@@ -159,9 +159,9 @@ public class Listeners {
     @Subscribe
     public void onPlayerDisconnect(DisconnectEvent e) {
         Player player = e.getPlayer();
-        if (newPlayers.containsKey(player))
-            executeQuery("SELECT handle_upsert_user_referral(?, ?, ?)", new Object[]{player.getUniqueId(), newPlayers.get(player), player.getUsername()}, () -> newPlayers.remove(player));
-        executeQuery("SELECT handle_delete_online_player(?)", new Object[]{player.getUniqueId()}, null);
+        if (newPlayers.containsKey(player)) // TODO -> network msg ?
+            executeQuery("CALL handle_upsert_user_referral(?, ?, ?)", new Object[]{player.getUniqueId(), newPlayers.get(player), player.getUsername()}, () -> newPlayers.remove(player));
+        executeQuery("CALL handle_delete_online_player(?)", new Object[]{player.getUniqueId()}, null);
     }
 
     public static void executeQuery(String query, Object[] params, Runnable optionalClosingLambda) {

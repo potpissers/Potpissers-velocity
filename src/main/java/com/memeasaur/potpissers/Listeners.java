@@ -18,7 +18,12 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import net.kyori.adventure.text.Component;
 
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -161,7 +166,7 @@ public class Listeners {
     public void onPlayerDisconnect(DisconnectEvent e) {
         Player player = e.getPlayer();
         if (newPlayers.containsKey(player)) // TODO -> network msg ?
-            executeQuery("CALL handle_upsert_user_referral(?, ?, ?, ?, ?)", new Object[]{player.getUniqueId(), newPlayers.get(player), player.getRemoteAddress().getAddress().getHostAddress(), POSTGRES_AES_KEY, player.getUsername()}, () -> newPlayers.remove(player));
+            executeQuery("CALL handle_upsert_user_referral(?, ?, ?, ?)", new Object[]{player.getUniqueId(), newPlayers.get(player), getIpBytes(player.getRemoteAddress().getAddress().getHostAddress()), player.getUsername()}, () -> newPlayers.remove(player));
         executeQuery("CALL handle_delete_online_player(?)", new Object[]{player.getUniqueId()}, null);
     }
 
@@ -177,5 +182,16 @@ public class Listeners {
                 throw new RuntimeException(ex);
             }
         }).schedule();
+    }
+
+    private static final SecretKey IP_REFERRAL_IP_HMAC_KEY = new SecretKeySpec(System.getenv("JAVA_AES_IP_REFERRAL_IP_KEY").getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+    private static byte[] getIpBytes(String ip) { // TODO -> module or whatever to share functions with plugin
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(IP_REFERRAL_IP_HMAC_KEY);
+            return mac.doFinal(ip.getBytes(StandardCharsets.UTF_8));
+        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

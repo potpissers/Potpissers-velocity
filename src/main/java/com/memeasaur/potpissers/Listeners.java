@@ -52,6 +52,7 @@ public class Listeners {
         postgresConfig.setJdbcUrl(System.getenv("POSTGRES_JDBC_URL"));
         PQ_POOL = new HikariDataSource(postgresConfig);
     }
+    public static final String POSTGRES_AES_KEY = System.getenv("POSTGRES_AES_KEY");
     public static final ConcurrentHashMap<Player, OffsetDateTime> newPlayers = new ConcurrentHashMap<>();
 
 //    public static final Set<String> PRIVATE_CHAT_SERVERS = Set.of("hcf", "mz"); // TODO ?
@@ -160,7 +161,7 @@ public class Listeners {
     public void onPlayerDisconnect(DisconnectEvent e) {
         Player player = e.getPlayer();
         if (newPlayers.containsKey(player)) // TODO -> network msg ?
-            executeQuery("CALL handle_upsert_user_referral(?, ?, ?)", new Object[]{player.getUniqueId(), newPlayers.get(player), player.getUsername()}, () -> newPlayers.remove(player));
+            executeQuery("CALL handle_upsert_user_referral(?, ?, ?, ?, ?)", new Object[]{player.getUniqueId(), newPlayers.get(player), player.getRemoteAddress().getAddress().getHostAddress(), POSTGRES_AES_KEY, player.getUsername()}, () -> newPlayers.remove(player));
         executeQuery("CALL handle_delete_online_player(?)", new Object[]{player.getUniqueId()}, null);
     }
 
